@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Deuda — Ministerio de Salud Prov. Bs As</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px}
+header{background:#1F3864;color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{font-size:16px;font-weight:600}
+header p{font-size:12px;opacity:0.75;margin-top:2px}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.metrics{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+.metric{background:#fff;border:1px solid #e0e0e0;border-radius:8px;padding:14px 18px;flex:1;min-width:130px}
+.metric label{font-size:11px;color:#666;display:block;margin-bottom:4px}
+.metric span{font-size:22px;font-weight:600;color:#1a1a1a}
+.metric.alerta span{color:#c0392b}
+.tabs{display:flex;border-bottom:2px solid #ddd;margin-bottom:16px;overflow-x:auto}
+.tab{padding:8px 16px;border:none;background:transparent;color:#666;font-size:13px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-2px}
+.tab:hover{color:#1a1a1a;background:#f0f0f0}
+.tab.active{color:#1F3864;border-bottom:2px solid #1F3864;font-weight:600}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+input,select{font-size:13px;padding:7px 10px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a}
+input:focus,select:focus{outline:none;border-color:#2E75B6}
+button{font-size:13px;cursor:pointer;padding:7px 14px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#1a1a1a}
+button:hover{background:#f0f0f0}
+button.primary{background:#2E75B6;color:#fff;border-color:#2E75B6;font-weight:500}
+button.primary:hover{background:#1a5c9e}
+button.warn{background:#fff3cd;color:#856404;border-color:#ffc107;padding:4px 10px;font-size:12px}
+button.danger{background:#fde8e8;color:#c0392b;border-color:#e74c3c;padding:4px 10px;font-size:12px}
+button.save{background:#d4edda;color:#155724;border-color:#28a745;font-weight:500}
+button.save:hover{background:#c3e6cb}
+.wrap{overflow-x:auto;border-radius:8px;border:1px solid #e0e0e0}
+table{width:100%;border-collapse:collapse;background:#fff}
+thead th{background:#f0f4f8;color:#444;font-weight:600;font-size:12px;padding:10px;text-align:left;white-space:nowrap;border-bottom:1px solid #ddd}
+tbody td{font-size:12px;padding:8px 10px;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tbody tr:hover td{background:#f7fafd}
+.badge{display:inline-block;font-size:11px;padding:2px 9px;border-radius:20px;white-space:nowrap;font-weight:500}
+.badge-pago{background:#fde8e8;color:#c0392b}
+.badge-entregar{background:#fff3cd;color:#856404}
+.badge-entregada{background:#d4edda;color:#155724}
+.badge-otro{background:#e9ecef;color:#495057}
+.footer-table{font-size:12px;color:#666;margin-top:8px;text-align:right}
+.res-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:16px}
+.card h3{font-size:13px;font-weight:600;color:#1F3864;padding-bottom:10px;border-bottom:1px solid #eee;margin-bottom:12px}
+.card-metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.cm{background:#f0f4f8;border-radius:6px;padding:8px 10px}
+.cm label{font-size:10px;color:#666;display:block}
+.cm span{font-size:16px;font-weight:600}
+.card table td{padding:3px 0;font-size:12px;border:none;background:transparent}
+.card table td:first-child{color:#666;width:60%}
+.card table td:last-child{text-align:right;font-weight:500}
+.fact-list{margin-top:10px;border-top:1px solid #eee;padding-top:8px}
+.fact-list div{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:11px}
+.total-card{background:#1F3864;color:#fff;border-color:#1F3864}
+.total-card h3{color:#fff;border-color:rgba(255,255,255,0.2)}
+.total-card .cm{background:rgba(255,255,255,0.15)}
+.total-card .cm label{color:rgba(255,255,255,0.7)}
+.total-card .cm span{color:#fff}
+.total-card table td{color:#fff!important;border:none;background:transparent}
+.total-card table td:first-child{color:rgba(255,255,255,0.7)!important}
+.modal-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:12px;padding:24px;width:90%;max-width:720px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:15px;font-weight:600;margin-bottom:16px;color:#1F3864}
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.field label{font-size:12px;color:#555;display:block;margin-bottom:4px}
+.field input,.field select{width:100%}
+.err{color:#c0392b;font-size:12px;margin-top:8px;display:none}
+.modal-footer{display:flex;gap:8px;margin-top:16px}
+.save-bar{background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:10px 16px;margin-bottom:16px;display:none;align-items:center;justify-content:space-between;gap:12px}
+.save-bar span{font-size:13px;color:#856404}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Gestión de Deuda — Ministerio de Salud Prov. Bs As</h1>
+    <p>Servicio de fotocopias / impresiones &nbsp;·&nbsp; Situación al 31/03/2026</p>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="save" onclick="guardarArchivo()" title="Guarda los cambios en este mismo archivo HTML">💾 Guardar archivo</button>
+    <button class="primary" onclick="abrirNueva()">+ Nueva factura</button>
+  </div>
+</header>
+<div class="container">
+  <div id="save-bar" class="save-bar">
+    <span>⚠ Tenés cambios sin guardar. Hacé clic en "Guardar archivo" para que no se pierdan.</span>
+    <button class="save" onclick="guardarArchivo()">💾 Guardar ahora</button>
+  </div>
+  <div class="metrics" id="metrics"></div>
+  <div class="tabs">
+    <button class="tab active" onclick="setTab('todas',this)">Todas</button>
+    <button class="tab" onclick="setTab('resumen',this)">Resumen</button>
+    <button class="tab" onclick="setTab('HOSPITAL BOLLINI',this)">Bollini</button>
+    <button class="tab" onclick="setTab('HOSPITAL CABRED',this)">Cabred</button>
+    <button class="tab" onclick="setTab('HOSPITAL EVITA DE LANÚS',this)">Evita Lanús</button>
+    <button class="tab" onclick="setTab('HOSPITAL MERCANTE',this)">Mercante</button>
+    <button class="tab" onclick="setTab('HTAL. PAROISSIEN - S JUSTO',this)">Paroissien</button>
+    <button class="tab" onclick="setTab('REG. SANIT. VII - ITUZAINGÓ',this)">Reg. Sanit. VII</button>
+    <button class="tab" onclick="setTab('UPA 18 - VIRREY DEL PINO',this)">UPA 18</button>
+  </div>
+  <div id="view-tabla">
+    <div class="toolbar">
+      <input id="buscar" placeholder="Buscar factura, expediente, organismo..." style="width:300px" oninput="renderTabla()">
+      <select id="filtro-estado" onchange="renderTabla()" style="width:210px">
+        <option value="">Todos los estados</option>
+        <option>entregada</option><option>pendiente</option><option>a entregar</option>
+        <option>sin expediente</option><option>entregada - OC vencida</option><option>abonado</option>
+      </select>
+      <button onclick="exportarCSV()" style="margin-left:auto">⬇ Exportar CSV</button>
+    </div>
+    <div class="wrap">
+      <table>
+        <thead><tr>
+          <th>N°</th><th>Organismo</th><th>O/C</th><th>Factura</th><th>Fecha</th><th>Importe</th>
+          <th>Expediente GDEBA</th><th>Situación</th><th>Últ. mov.</th><th>Estado</th><th>Acciones</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <div class="footer-table" id="pie"></div>
+  </div>
+  <div id="view-resumen" style="display:none"></div>
+</div>
+
+<div class="modal-overlay" id="modal-overlay" onclick="if(event.target===this)cerrarModal()">
+  <div class="modal">
+    <h2 id="modal-title">Nueva factura</h2>
+    <div class="form-grid">
+      <div class="field"><label>Organismo</label>
+        <select id="f-org" onchange="toggleOrgNuevo()">
+          <option value="">Seleccionar...</option>
+          <option>HOSPITAL BOLLINI</option><option>HOSPITAL CABRED</option>
+          <option>HOSPITAL EVITA DE LANÚS</option><option>HOSPITAL MERCANTE</option>
+          <option>HTAL. PAROISSIEN - S JUSTO</option><option>REG. SANIT. VII - ITUZAINGÓ</option>
+          <option>UPA 18 - VIRREY DEL PINO</option><option value="__nuevo__">+ Otro organismo...</option>
+        </select>
+      </div>
+      <div class="field" id="f-org-nuevo-box" style="display:none"><label>Nombre organismo</label><input id="f-org-nuevo" placeholder="Nombre del organismo"></div>
+      <div class="field"><label>O/C</label><input id="f-oc" placeholder="ej: 21/2025"></div>
+      <div class="field"><label>N° Factura</label><input id="f-fact" placeholder="ej: 258"></div>
+      <div class="field"><label>Fecha factura</label><input id="f-fecha" type="date"></div>
+      <div class="field"><label>Importe ($)</label><input id="f-imp" type="number" placeholder="0.00"></div>
+      <div class="field"><label>N° Expediente GDEBA</label><input id="f-exp" placeholder="EX-2025-..."></div>
+      <div class="field"><label>Situación</label>
+        <select id="f-sit">
+          <option value="">Sin expediente aún</option>
+          <option>Subdirección de Pagos - Pendiente de Pago</option>
+          <option>Dir. Rendición de Cuentas - Buzón Exp. Parciales</option>
+          <option>Departamento Contable - Privada</option>
+          <option>Finalizado / Abonado</option>
+          <option>Otra</option>
+        </select>
+      </div>
+      <div class="field"><label>Fecha último movimiento</label><input id="f-mov" type="date"></div>
+      <div class="field"><label>Estado entrega</label>
+        <select id="f-estado">
+          <option>entregada</option><option>pendiente</option><option>a entregar</option>
+          <option>sin expediente</option><option>entregada - OC vencida</option>
+          <option>solo remito - OC vencida</option><option>abonado</option>
+        </select>
+      </div>
+    </div>
+    <div class="err" id="f-err"></div>
+    <div class="modal-footer">
+      <button class="primary" onclick="guardar()">Guardar</button>
+      <button onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DATOS: no borrar esta línea -->
+<script id="data-store" type="application/json">
+[
+  {"org":"HOSPITAL BOLLINI","oc":"25/2025","fact":"251","fecha":"04/11/2025","imp":1005000,"exp":"","sit":"","mov":"28/11/2025","estado":"entregada"},
+  {"org":"HOSPITAL BOLLINI","oc":"25/2025","fact":"252","fecha":"03/12/2025","imp":1005000,"exp":"","sit":"","mov":"","estado":"entregada"},
+  {"org":"HOSPITAL BOLLINI","oc":"25/2025","fact":"253","fecha":"","imp":1005000,"exp":"","sit":"","mov":"","estado":"pendiente"},
+  {"org":"HOSPITAL CABRED","oc":"109/26","fact":"257","fecha":"12/01/2026","imp":9059718.75,"exp":"","sit":"","mov":"","estado":"sin expediente"},
+  {"org":"HOSPITAL CABRED","oc":"109/2025","fact":"191","fecha":"02/09/2025","imp":5073442.5,"exp":"EX-2025-32504932-GDEBA-HICDCMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"11/01/2026","estado":"entregada"},
+  {"org":"HOSPITAL CABRED","oc":"109/2025","fact":"201","fecha":"02/10/2025","imp":9059718.75,"exp":"EX-2025-38160535-GDEBA-HICDCMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"10/12/2025","estado":"entregada"},
+  {"org":"HOSPITAL CABRED","oc":"109/2025","fact":"217","fecha":"04/11/2025","imp":9059718.75,"exp":"EX-2025-45486065-GDEBA-HICDCMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"13/02/2026","estado":"entregada"},
+  {"org":"HOSPITAL CABRED","oc":"109/25","fact":"223","fecha":"03/12/2025","imp":9059718.75,"exp":"EX-2025-45484240-GDEBA-HICDCMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"09/02/2026","estado":"entregada"},
+  {"org":"HOSPITAL EVITA DE LANÚS","oc":"109/25","fact":"183","fecha":"26/08/2025","imp":8710620,"exp":"EX-2025-33338334-GDEBA-HIGAEMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"06/11/2025","estado":"entregada"},
+  {"org":"HOSPITAL EVITA DE LANÚS","oc":"109/25","fact":"190","fecha":"02/09/2025","imp":10494590,"exp":"EX-2025-33338334-GDEBA-HIGAEMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"06/11/2025","estado":"entregada"},
+  {"org":"HOSPITAL EVITA DE LANÚS","oc":"109/25","fact":"205","fecha":"03/10/2025","imp":10494590,"exp":"EX-2025-39398148-GDEBA-HIGAEMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"04/02/2026","estado":"entregada"},
+  {"org":"HOSPITAL EVITA DE LANÚS","oc":"109/25","fact":"216","fecha":"04/11/2025","imp":10494590,"exp":"EX-2025-42892285-GDEBA-HIGAEMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"29/01/2026","estado":"entregada"},
+  {"org":"HOSPITAL EVITA DE LANÚS","oc":"109/25","fact":"261","fecha":"03/12/2025","imp":10494590,"exp":"","sit":"","mov":"","estado":"sin expediente"},
+  {"org":"HOSPITAL EVITA DE LANÚS","oc":"109/26","fact":"s/d","fecha":"","imp":339780,"exp":"","sit":"","mov":"","estado":"entregada - OC vencida"},
+  {"org":"HOSPITAL EVITA DE LANÚS","oc":"109/25","fact":"s/d","fecha":"","imp":10494590,"exp":"","sit":"","mov":"","estado":"solo remito - OC vencida"},
+  {"org":"HOSPITAL MERCANTE","oc":"494/2025","fact":"211","fecha":"04/11/2025","imp":6828800,"exp":"EX-2025-43864417-GDEBA-HZGAGDMMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"06/02/2026","estado":"entregada"},
+  {"org":"HOSPITAL MERCANTE","oc":"494/25","fact":"226","fecha":"03/12/2025","imp":6828800,"exp":"EX-2025-45293879-GDEBA-HZGAGDMMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"12/02/2026","estado":"entregada"},
+  {"org":"HOSPITAL MERCANTE","oc":"494/26","fact":"260","fecha":"12/01/2026","imp":6828800,"exp":"EX-2026-25349036-GDEBA-HZGAGDMMSALGP","sit":"","mov":"","estado":"sin situación"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"125","fecha":"13/03/2025","imp":8074000,"exp":"EX-2025-20446760-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"23/01/2026","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"132","fecha":"04/04/2025","imp":8074000,"exp":"EX-2025-24340891-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"01/10/2025","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"162","fecha":"03/07/2025","imp":8074000,"exp":"EX-2025-32337560-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"26/11/2025","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"176","fecha":"11/08/2025","imp":8074000,"exp":"EX-2025-33389048-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"03/12/2025","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"188","fecha":"02/09/2025","imp":8074000,"exp":"EX-2025-35561451-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"07/11/2025","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"203","fecha":"03/10/2025","imp":8074000,"exp":"EX-2025-43054633-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"30/01/2026","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"214","fecha":"04/11/2025","imp":8074000,"exp":"EX-2025-43057445-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"30/01/2026","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"261/25","fact":"258","fecha":"12/01/2026","imp":8074000,"exp":"EX-2026-2005420-GDEBA-HIGACMDDPMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"20/01/2026","estado":"entregada"},
+  {"org":"HTAL. PAROISSIEN - S JUSTO","oc":"21/2025","fact":"224","fecha":"03/12/2025","imp":8074000,"exp":"","sit":"","mov":"","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"97/2025","fact":"160","fecha":"03/07/2025","imp":6300000,"exp":"EX-2025-23449048-GDEBA-RSVIIMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"14/10/2025","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"97/2026","fact":"186","fecha":"10/09/2025","imp":6300000,"exp":"EX-2025-34120386-GDEBA-RSVIIMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"14/11/2025","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"240/2025","fact":"202","fecha":"03/10/2025","imp":6300000,"exp":"EX-2025-39674322-GDEBA-RSVIIMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"22/12/2025","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"240/2025","fact":"213","fecha":"04/11/2025","imp":6300000,"exp":"EX-2025-45496849-GDEBA-RSVIIMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"09/02/2026","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"240/2025","fact":"221","fecha":"03/12/2025","imp":6300000,"exp":"EX-2025-45065261-GDEBA-RSVIIMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"04/02/2026","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"240/2025","fact":"255","fecha":"12/01/2026","imp":6300000,"exp":"EX-2026-03606000-GDEBA-RSVIIMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"09/03/2026","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"154/2025","fact":"154","fecha":"10/06/2025","imp":6300000,"exp":"EX-2025-20868112-GDEBA-RSVIIMSALGP","sit":"Dir. Rendición de Cuentas - Buzón Exp. Parciales","mov":"11/09/2025","estado":"entregada"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"100/2026","fact":"279","fecha":"12/03/2026","imp":2871000,"exp":"","sit":"","mov":"","estado":"a entregar"},
+  {"org":"REG. SANIT. VII - ITUZAINGÓ","oc":"100/2026","fact":"280","fecha":"12/03/2026","imp":2871000,"exp":"","sit":"","mov":"","estado":"a entregar"},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"338/2025","fact":"174","fecha":"11/08/2025","imp":1560000,"exp":"EX-2025-29008327-GDEBA-HPDIGAMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"01/10/2025","estado":"entregada"},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"338/2025","fact":"189","fecha":"02/09/2025","imp":1560000,"exp":"EX-2025-33744619-GDEBA-HPDIGAMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"16/12/2025","estado":"entregada"},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"338/2025","fact":"204","fecha":"03/10/2025","imp":1560000,"exp":"EX-2025-38470381-GDEBA-HPDIGAMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"06/01/2026","estado":"entregada"},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"338/2025","fact":"215","fecha":"04/11/2025","imp":1560000,"exp":"EX-2025-43373615-GDEBA-HPDIGAMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"10/02/2026","estado":"pendiente"},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"338/2026","fact":"225","fecha":"03/12/2025","imp":1560000,"exp":"EX-2025-45282725-GDEBA-HPDIGAMSALGP","sit":"Subdirección de Pagos - Pendiente de Pago","mov":"04/02/2026","estado":"entregada"},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"338/2027","fact":"259","fecha":"12/01/2026","imp":1560000,"exp":"EX-2026-3196663-GDEBA-HPDIGAMSALGP","sit":"Departamento Contable - Privada","mov":"","estado":""},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"32/2026","fact":"277","fecha":"12/03/2026","imp":1560000,"exp":"","sit":"","mov":"","estado":"a entregar"},
+  {"org":"UPA 18 - VIRREY DEL PINO","oc":"32/2026","fact":"278","fecha":"12/03/2026","imp":1560000,"exp":"","sit":"","mov":"","estado":"a entregar"}
+]
+</script>
+
+<script>
+const ORGS_BASE=["HOSPITAL BOLLINI","HOSPITAL CABRED","HOSPITAL EVITA DE LANÚS","HOSPITAL MERCANTE","HTAL. PAROISSIEN - S JUSTO","REG. SANIT. VII - ITUZAINGÓ","UPA 18 - VIRREY DEL PINO"];
+const fmt=n=>n?'$'+Number(n).toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'-';
+function badgeClass(e){const v=String(e).toLowerCase();if(v.includes('pendiente')||v.includes('sin exp')||v.includes('vencida'))return'badge-pago';if(v.includes('entregar'))return'badge-entregar';if(v.includes('entregada')||v.includes('abonado')||v.includes('finalizado'))return'badge-entregada';return'badge-otro';}
+function fmtDI(v){if(!v)return'';const[y,m,d]=v.split('-');return d+'/'+m+'/'+y;}
+function parseDI(s){if(!s||!s.includes('/'))return'';const p=s.split('/');if(p.length<3)return'';return p[2]+'-'+p[1]+'-'+p[0];}
+
+let DATA=JSON.parse(document.getElementById('data-store').textContent);
+let tabActual='todas';
+let editIdx=null;
+let hayPendientes=false;
+
+function marcarPendiente(){
+  hayPendientes=true;
+  document.getElementById('save-bar').style.display='flex';
+}
+
+// Guardar reescribiendo el archivo HTML completo con los datos actualizados
+function guardarArchivo(){
+  const html=document.documentElement.outerHTML;
+  const jsonNuevo=JSON.stringify(DATA,null,2);
+  // Reemplazar el contenido del script data-store
+  const inicio=html.indexOf('<script id="data-store"');
+  const finTag=html.indexOf('>',inicio)+1;
+  const finScript=html.indexOf('<\/script>',finTag);
+  const htmlNuevo=html.substring(0,finTag)+'\n'+jsonNuevo+'\n'+html.substring(finScript);
+  const blob=new Blob([htmlNuevo],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='deuda_hospitales.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  hayPendientes=false;
+  document.getElementById('save-bar').style.display='none';
+  // Mostrar confirmacion
+  const btn=document.querySelector('button.save');
+  const orig=btn.textContent;
+  btn.textContent='✓ Guardado';
+  setTimeout(()=>{btn.textContent=orig;},2000);
+}
+
+function setTab(t,el){
+  tabActual=t;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('view-tabla').style.display=t==='resumen'?'none':'block';
+  document.getElementById('view-resumen').style.display=t==='resumen'?'block':'none';
+  if(t==='resumen')renderResumen();else renderTabla();
+}
+
+function filtered(){
+  const q=(document.getElementById('buscar').value||'').toLowerCase();
+  const est=document.getElementById('filtro-estado').value;
+  return DATA.filter(r=>{
+    const mt=tabActual==='todas'||tabActual==='resumen'||r.org===tabActual;
+    const mq=!q||(r.org+r.fact+r.exp+r.oc).toLowerCase().includes(q);
+    const me=!est||r.estado===est;
+    return mt&&mq&&me;
+  });
+}
+
+function renderTabla(){
+  const rows=filtered();
+  document.getElementById('tbody').innerHTML=rows.map((r,i)=>`
+    <tr>
+      <td style="color:#999">${i+1}</td>
+      <td style="font-weight:600;max-width:150px">${r.org}</td>
+      <td>${r.oc||'-'}</td>
+      <td>${r.fact||'-'}</td>
+      <td style="white-space:nowrap">${r.fecha||'-'}</td>
+      <td style="text-align:right;white-space:nowrap;font-weight:500">${fmt(r.imp)}</td>
+      <td style="font-size:11px;max-width:180px;word-break:break-all">${r.exp||'-'}</td>
+      <td style="font-size:11px;max-width:160px">${r.sit||'-'}</td>
+      <td style="white-space:nowrap">${r.mov||'-'}</td>
+      <td><span class="badge ${badgeClass(r.estado)}">${r.estado||'-'}</span></td>
+      <td style="white-space:nowrap;display:flex;gap:4px">
+        <button class="warn" onclick="abrirEdicion(${DATA.indexOf(r)})">Editar</button>
+        <button class="danger" onclick="eliminar(${DATA.indexOf(r)})">x</button>
+      </td>
+    </tr>`).join('');
+  const total=rows.reduce((s,r)=>s+(r.imp||0),0);
+  document.getElementById('pie').textContent=`${rows.length} facturas · Total: ${fmt(total)}`;
+}
+
+function renderResumen(){
+  const orgs=[...new Set(DATA.map(r=>r.org))].sort();
+  const cards=orgs.map(org=>{
+    const rows=DATA.filter(r=>r.org===org);
+    const total=rows.reduce((s,r)=>s+(r.imp||0),0);
+    const pend=rows.filter(r=>String(r.sit).includes('Pendiente')||String(r.estado).includes('pendiente')||String(r.estado).includes('sin exp')).length;
+    const conExp=rows.filter(r=>r.exp).length;
+    const sinExp=rows.filter(r=>!r.exp).length;
+    const masVieja=rows.filter(r=>r.fecha).map(r=>r.fecha).sort()[0]||'-';
+    return`<div class="card">
+      <h3>${org}</h3>
+      <div class="card-metrics">
+        <div class="cm"><label>Facturas</label><span>${rows.length}</span></div>
+        <div class="cm"><label>Total</label><span style="font-size:13px">${fmt(total)}</span></div>
+      </div>
+      <table><tbody>
+        <tr><td>Con expediente GDEBA</td><td>${conExp}</td></tr>
+        <tr><td>Sin expediente</td><td style="color:${sinExp?'#c0392b':'#155724'}">${sinExp}</td></tr>
+        <tr><td>Con alerta de estado</td><td style="color:${pend?'#c0392b':'#155724'}">${pend}</td></tr>
+        <tr><td>Factura más antigua</td><td>${masVieja}</td></tr>
+      </tbody></table>
+      <div class="fact-list">${rows.map(r=>`<div><span style="color:#666">Fact. ${r.fact}</span><span class="badge ${badgeClass(r.estado)}" style="font-size:10px">${r.estado||'-'}</span></div>`).join('')}</div>
+    </div>`;
+  }).join('');
+  const totalAll=DATA.reduce((s,r)=>s+(r.imp||0),0);
+  document.getElementById('view-resumen').innerHTML=`<div class="res-grid">${cards}
+    <div class="card total-card">
+      <h3>Total general</h3>
+      <div class="card-metrics">
+        <div class="cm"><label>Facturas</label><span>${DATA.length}</span></div>
+        <div class="cm"><label>Total</label><span style="font-size:13px">${fmt(totalAll)}</span></div>
+      </div>
+      <table><tbody>
+        <tr><td>Organismos</td><td>${orgs.length}</td></tr>
+        <tr><td>Con expediente</td><td>${DATA.filter(r=>r.exp).length}</td></tr>
+        <tr><td>Sin expediente</td><td>${DATA.filter(r=>!r.exp).length}</td></tr>
+      </tbody></table>
+    </div>
+  </div>`;
+}
+
+function renderMetrics(){
+  const total=DATA.reduce((s,r)=>s+(r.imp||0),0);
+  const pend=DATA.filter(r=>String(r.sit).includes('Subdirección de Pagos')).length;
+  const montoPend=DATA.filter(r=>String(r.sit).includes('Subdirección de Pagos')).reduce((s,r)=>s+(r.imp||0),0);
+  const orgs=[...new Set(DATA.map(r=>r.org))].length;
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><label>Total adeudado</label><span>${fmt(total)}</span></div>
+    <div class="metric"><label>Facturas</label><span>${DATA.length}</span></div>
+    <div class="metric"><label>Organismos</label><span>${orgs}</span></div>
+    <div class="metric"><label>En Subdirección de Pagos</label><span>${pend} fact.</span></div>
+    <div class="metric alerta"><label>Monto en Subdir. Pagos</label><span style="font-size:15px">${fmt(montoPend)}</span></div>`;
+}
+
+function toggleOrgNuevo(){document.getElementById('f-org-nuevo-box').style.display=document.getElementById('f-org').value==='__nuevo__'?'block':'none';}
+
+function limpiarForm(){
+  ['f-oc','f-fact','f-imp','f-exp','f-org-nuevo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['f-fecha','f-mov'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('f-org').value='';
+  document.getElementById('f-sit').value='';
+  document.getElementById('f-estado').value='entregada';
+  document.getElementById('f-org-nuevo-box').style.display='none';
+  document.getElementById('f-err').style.display='none';
+}
+
+function abrirNueva(){editIdx=null;limpiarForm();document.getElementById('modal-title').textContent='Nueva factura';document.getElementById('modal-overlay').classList.add('open');}
+
+function abrirEdicion(idx){
+  editIdx=idx;const r=DATA[idx];limpiarForm();
+  document.getElementById('modal-title').textContent='Editar factura — '+r.fact;
+  if(ORGS_BASE.includes(r.org)){document.getElementById('f-org').value=r.org;}
+  else{document.getElementById('f-org').value='__nuevo__';document.getElementById('f-org-nuevo-box').style.display='block';document.getElementById('f-org-nuevo').value=r.org;}
+  document.getElementById('f-oc').value=r.oc||'';
+  document.getElementById('f-fact').value=r.fact||'';
+  document.getElementById('f-fecha').value=parseDI(r.fecha);
+  document.getElementById('f-imp').value=r.imp||'';
+  document.getElementById('f-exp').value=r.exp||'';
+  document.getElementById('f-sit').value=r.sit||'';
+  document.getElementById('f-mov').value=parseDI(r.mov);
+  document.getElementById('f-estado').value=r.estado||'entregada';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function cerrarModal(){document.getElementById('modal-overlay').classList.remove('open');limpiarForm();editIdx=null;}
+
+function guardar(){
+  const orgSel=document.getElementById('f-org').value;
+  const orgNuevo=document.getElementById('f-org-nuevo').value.trim();
+  const org=orgSel==='__nuevo__'?orgNuevo:orgSel;
+  const fact=document.getElementById('f-fact').value.trim();
+  const imp=parseFloat(document.getElementById('f-imp').value)||0;
+  const errEl=document.getElementById('f-err');
+  if(!org){errEl.textContent='Seleccioná o ingresá el organismo.';errEl.style.display='block';return;}
+  if(!fact){errEl.textContent='Ingresá el número de factura.';errEl.style.display='block';return;}
+  if(!imp){errEl.textContent='Ingresá el importe.';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  const nuevo={org,oc:document.getElementById('f-oc').value.trim(),fact,fecha:fmtDI(document.getElementById('f-fecha').value),imp,exp:document.getElementById('f-exp').value.trim(),sit:document.getElementById('f-sit').value,mov:fmtDI(document.getElementById('f-mov').value),estado:document.getElementById('f-estado').value};
+  if(editIdx!==null){DATA[editIdx]=nuevo;}else{DATA.push(nuevo);}
+  marcarPendiente();
+  cerrarModal();renderMetrics();
+  if(tabActual==='resumen')renderResumen();else renderTabla();
+}
+
+function eliminar(idx){
+  if(confirm('¿Eliminar esta factura?')){
+    DATA.splice(idx,1);
+    marcarPendiente();
+    renderMetrics();
+    if(tabActual==='resumen')renderResumen();else renderTabla();
+  }
+}
+
+function exportarCSV(){
+  const rows=filtered();
+  const h='Organismo,O/C,Factura,Fecha,Importe,Expediente,Situacion,Ult.Mov,Estado\n';
+  const b=rows.map(r=>[r.org,r.oc,r.fact,r.fecha,r.imp,r.exp,r.sit,r.mov,r.estado].map(v=>'"'+(v||'')+'"').join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([h+b],{type:'text/csv;charset=utf-8;'}));
+  a.download='facturas_hospitales.csv';a.click();
+}
+
+window.addEventListener('beforeunload',function(e){
+  if(hayPendientes){e.preventDefault();e.returnValue='Tenés cambios sin guardar. ¿Salir de todas formas?';}
+});
+
+renderMetrics();renderTabla();
+</script>
+</body>
+</html>
